@@ -1,0 +1,26 @@
+# Ignore files
+*-lock.json
+*.exe
+*.dll
+*.obj
+*.lib
+*.bak
+*.tmp
+*.cache
+*.pdb
+*.log
+*.pyc
+
+.vscode
+.env
+.DS_Store
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Ignore directories
+static/
+node_modules/
+venv/
