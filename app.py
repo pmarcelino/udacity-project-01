@@ -2,7 +2,6 @@
 # Imports
 #----------------------------------------------------------------------------#
 
-import json
 import babel
 import dateutil.parser
 import logging
@@ -33,7 +32,7 @@ class Venue(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String)
-    city = db.Column(db.String(120))  # TODO: nullable=False
+    city = db.Column(db.String(120), nullable=False)  # TODO: nullable=False
     state = db.Column(db.String(120))  # TODO: nullable=False
     address = db.Column(db.String(120))  # TODO: nullable=False
     phone = db.Column(db.String(120))
@@ -47,15 +46,14 @@ class Venue(db.Model):
     
     # Function for updating venue data
     def update(venue, new_data:dict):
-        for key, value in new_data.items():
-          if key=="seeking_talent":  # request.form.get don't return bool values
-            if value=="y":
-              value = True
-            else:
-              value = False 
-          setattr(venue, key, value)
-        return venue
-
+      for key, value in new_data.items():
+        if key=="seeking_talent":  # request.form.get don't return bool values
+          if value=="y":
+            value = True
+          else:
+            value = False 
+        setattr(venue, key, value)
+      return venue
 class Artist(db.Model):
     __tablename__ = 'Artist'
 
@@ -74,14 +72,14 @@ class Artist(db.Model):
     
     # Function for updating artist data
     def update(artist, new_data:dict):
-        for key, value in new_data.items():
-          if key=="seeking_venue":  # request.form.get don't return bool values
-            if value=="y":
-              value = True
-            else:
-              value = False 
-          setattr(artist, key, value)
-        return artist
+      for key, value in new_data.items():
+        if key=="seeking_talent":  # request.form.get don't return bool values
+          if value=="y":
+            value = True
+          else:
+            value = False 
+        setattr(artist, key, value)
+      return artist
     
 class Show(db.Model):
   __tablename__ = "Show"
@@ -152,14 +150,8 @@ def venues():
   
   cities_states = Venue.query.distinct(Venue.city, Venue.state).all()
   
-  data = []
-  for city_state in cities_states:
-    venues = Venue.query.filter_by(city=city_state.city, state=city_state.state).all()
-    element = {'city': city_state.city,
-               'state': city_state.state,
-               'venues': venues}
-    data.append(element)
-    
+  data = [{"city": city_state.city, "state": city_state.state, "venues": Venue.query.filter_by(city=city_state.city, state=city_state.state).all()} for city_state in cities_states]
+  
   # TODO: num_upcoming_shows
   
   return render_template('pages/venues.html', areas=data)
@@ -169,15 +161,22 @@ def search_venues():
   # TODO: implement search on artists with partial string search. Ensure it is case-insensitive.
   # seach for Hop should return "The Musical Hop".
   # search for "Music" should return "The Musical Hop" and "Park Square Live Music & Coffee"
-  response={
-    "count": 1,
-    "data": [{
-      "id": 2,
-      "name": "The Dueling Pianos Bar",
-      "num_upcoming_shows": 0,
-    }]
-  }
-  return render_template('pages/search_venues.html', results=response, search_term=request.form.get('search_term', ''))
+  # response={
+  #   "count": 1,
+  #   "data": [{
+  #     "id": 2,
+  #     "name": "The Dueling Pianos Bar",
+  #     "num_upcoming_shows": 0,
+  #   }]
+  # }
+  
+  search_term = request.form.get('search_term', '')
+  
+  venues = Venue.query.filter(Venue.name.ilike(f"%{search_term}%")).all()
+  response = {'count':len(venues),
+              'data': venues}
+  
+  return render_template('pages/search_venues.html', results=response, search_term=search_term)
 
 @app.route('/venues/<int:venue_id>')
 def show_venue(venue_id):
@@ -279,7 +278,19 @@ def create_venue_form():
 def create_venue_submission():
   # TODO: insert form data as a new Venue record in the db, instead
   # TODO: modify data to be the data object returned from db insertion
-
+  
+  genres_list = request.form.getlist('genres')
+  genres_as_string = ','.join(genres_list)
+  
+  new_data = request.form.to_dict()
+  new_data['genres'] = genres_as_string
+  
+  venue = Venue()
+  venue.update(new_data)
+  
+  db.session.add(venue)
+  db.session.commit()
+  
   # on successful db insert, flash success
   flash('Venue ' + request.form['name'] + ' was successfully listed!')
   # TODO: on unsuccessful db insert, flash an error instead.
@@ -327,7 +338,14 @@ def search_artists():
       "num_upcoming_shows": 0,
     }]
   }
-  return render_template('pages/search_artists.html', results=response, search_term=request.form.get('search_term', ''))
+  
+  search_term = request.form.get('search_term', '')
+  
+  artists = Artist.query.filter(Artist.name.ilike(f"%{search_term}%")).all()
+  response = {'count':len(artists),
+              'data': artists}
+  
+  return render_template('pages/search_artists.html', results=response, search_term=search_term)
 
 @app.route('/artists/<int:artist_id>')
 def show_artist(artist_id):
@@ -510,6 +528,18 @@ def create_artist_submission():
   # called upon submitting the new artist listing form
   # TODO: insert form data as a new Venue record in the db, instead
   # TODO: modify data to be the data object returned from db insertion
+  
+  genres_list = request.form.getlist('genres')
+  genres_as_string = ','.join(genres_list)
+  
+  new_data = request.form.to_dict()
+  new_data['genres'] = genres_as_string
+  
+  artist = Artist()
+  artist.update(new_data)
+  
+  db.session.add(artist)
+  db.session.commit()
 
   # on successful db insert, flash success
   flash('Artist ' + request.form['name'] + ' was successfully listed!')
