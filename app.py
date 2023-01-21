@@ -33,34 +33,56 @@ class Venue(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String)
-    city = db.Column(db.String(120))
-    state = db.Column(db.String(120))
-    address = db.Column(db.String(120))
+    city = db.Column(db.String(120))  # TODO: nullable=False
+    state = db.Column(db.String(120))  # TODO: nullable=False
+    address = db.Column(db.String(120))  # TODO: nullable=False
     phone = db.Column(db.String(120))
     image_link = db.Column(db.String(500))
     facebook_link = db.Column(db.String(120))
     
-    genres = db.Column(db.String(120))
+    genres = db.Column(db.String(120))  # TODO: nullable=False
     website = db.Column(db.String)
     seeking_talent = db.Column(db.Boolean)
     seeking_description = db.Column(db.String)
+    
+    # Function for updating venue data
+    def update(venue, new_data:dict):
+        for key, value in new_data.items():
+          if key=="seeking_talent":  # request.form.get don't return bool values
+            if value=="y":
+              value = True
+            else:
+              value = False 
+          setattr(venue, key, value)
+        return venue
 
 class Artist(db.Model):
     __tablename__ = 'Artist'
 
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String)
-    city = db.Column(db.String(120))
-    state = db.Column(db.String(120))
+    name = db.Column(db.String)  # TODO: nullable=False
+    city = db.Column(db.String(120))  # TODO: nullable=False
+    state = db.Column(db.String(120))  # TODO: nullable=False
     phone = db.Column(db.String(120))
-    genres = db.Column(db.String(120))
+    genres = db.Column(db.String(120))  # TODO: nullable=False
     image_link = db.Column(db.String(500))
     facebook_link = db.Column(db.String(120))
     
     website = db.Column(db.String)
     seeking_venue = db.Column(db.Boolean)
     seeking_description = db.Column(db.String)
-
+    
+    # Function for updating artist data
+    def update(artist, new_data:dict):
+        for key, value in new_data.items():
+          if key=="seeking_venue":  # request.form.get don't return bool values
+            if value=="y":
+              value = True
+            else:
+              value = False 
+          setattr(artist, key, value)
+        return artist
+    
 class Show(db.Model):
   __tablename__ = "Show"
   
@@ -394,53 +416,85 @@ def show_artist(artist_id):
 @app.route('/artists/<int:artist_id>/edit', methods=['GET'])
 def edit_artist(artist_id):
   form = ArtistForm()
-  artist={
-    "id": 4,
-    "name": "Guns N Petals",
-    "genres": ["Rock n Roll"],
-    "city": "San Francisco",
-    "state": "CA",
-    "phone": "326-123-5000",
-    "website": "https://www.gunsnpetalsband.com",
-    "facebook_link": "https://www.facebook.com/GunsNPetals",
-    "seeking_venue": True,
-    "seeking_description": "Looking for shows to perform at in the San Francisco Bay Area!",
-    "image_link": "https://images.unsplash.com/photo-1549213783-8284d0336c4f?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=300&q=80"
-  }
-  # TODO: populate form with fields from artist with ID <artist_id>
+  # artist={
+  #   "id": 4,
+  #   "name": "Guns N Petals",
+  #   "genres": ["Rock n Roll"],
+  #   "city": "San Francisco",
+  #   "state": "CA",
+  #   "phone": "326-123-5000",
+  #   "website": "https://www.gunsnpetalsband.com",
+  #   "facebook_link": "https://www.facebook.com/GunsNPetals",
+  #   "seeking_venue": True,
+  #   "seeking_description": "Looking for shows to perform at in the San Francisco Bay Area!",
+  #   "image_link": "https://images.unsplash.com/photo-1549213783-8284d0336c4f?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=300&q=80"
+  # }
+  # # TODO: populate form with fields from artist with ID <artist_id>
+  
+  artist = Artist.query.get(artist_id)
+  
   return render_template('forms/edit_artist.html', form=form, artist=artist)
 
 @app.route('/artists/<int:artist_id>/edit', methods=['POST'])
 def edit_artist_submission(artist_id):
   # TODO: take values from the form submitted, and update existing
   # artist record with ID <artist_id> using the new attributes
+  
+  genres_list = request.form.getlist('genres') 
+  genres_as_string = ','.join(genres_list)
+  
+  new_data = request.form.to_dict()
+  new_data['genres'] = genres_as_string
+  
+  artist = Artist.query.get(artist_id)
+  artist.update(new_data)
+  
+  db.session.add(artist)
+  db.session.commit()
 
   return redirect(url_for('show_artist', artist_id=artist_id))
 
 @app.route('/venues/<int:venue_id>/edit', methods=['GET'])
 def edit_venue(venue_id):
   form = VenueForm()
-  venue={
-    "id": 1,
-    "name": "The Musical Hop",
-    "genres": ["Jazz", "Reggae", "Swing", "Classical", "Folk"],
-    "address": "1015 Folsom Street",
-    "city": "San Francisco",
-    "state": "CA",
-    "phone": "123-123-1234",
-    "website": "https://www.themusicalhop.com",
-    "facebook_link": "https://www.facebook.com/TheMusicalHop",
-    "seeking_talent": True,
-    "seeking_description": "We are on the lookout for a local artist to play every two weeks. Please call us.",
-    "image_link": "https://images.unsplash.com/photo-1543900694-133f37abaaa5?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=400&q=60"
-  }
+  # venue={
+  #   "id": 1,
+  #   "name": "The Musical Hop",
+  #   "genres": ["Jazz", "Reggae", "Swing", "Classical", "Folk"],
+  #   "address": "1015 Folsom Street",
+  #   "city": "San Francisco",
+  #   "state": "CA",
+  #   "phone": "123-123-1234",
+  #   "website": "https://www.themusicalhop.com",
+  #   "facebook_link": "https://www.facebook.com/TheMusicalHop",
+  #   "seeking_talent": True,
+  #   "seeking_description": "We are on the lookout for a local artist to play every two weeks. Please call us.",
+  #   "image_link": "https://images.unsplash.com/photo-1543900694-133f37abaaa5?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=400&q=60"
+  # }
   # TODO: populate form with values from venue with ID <venue_id>
+  
+  venue = Venue.query.get(venue_id)
+  
   return render_template('forms/edit_venue.html', form=form, venue=venue)
 
 @app.route('/venues/<int:venue_id>/edit', methods=['POST'])
 def edit_venue_submission(venue_id):
   # TODO: take values from the form submitted, and update existing
   # venue record with ID <venue_id> using the new attributes
+  
+  genres_list = request.form.getlist('genres') 
+  genres_as_string = ','.join(genres_list)
+  
+  new_data = request.form.to_dict()
+  new_data['genres'] = genres_as_string
+  
+  venue = Venue.query.get(venue_id)
+  venue.update(new_data)
+  
+  db.session.add(venue)
+  db.session.commit()
+  
+  
   return redirect(url_for('show_venue', venue_id=venue_id))
 
 #  Create Artist
