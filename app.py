@@ -46,15 +46,15 @@ class Venue(db.Model):
     seeking_description = db.Column(db.String)
     
     # Function for updating venue data
-    def update(venue, new_data:dict):
+    def update(cls, new_data:dict):
       for key, value in new_data.items():
         if key=="seeking_talent":  # request.form.get don't return bool values
           if value=="y":
             value = True
           else:
             value = False 
-        setattr(venue, key, value)
-      return venue
+        setattr(cls, key, value)
+      return cls
 class Artist(db.Model):
     __tablename__ = 'Artist'
 
@@ -72,15 +72,15 @@ class Artist(db.Model):
     seeking_description = db.Column(db.String)
     
     # Function for updating artist data
-    def update(artist, new_data:dict):
+    def update(cls, new_data:dict):
       for key, value in new_data.items():
         if key=="seeking_talent":  # request.form.get don't return bool values
           if value=="y":
             value = True
           else:
             value = False 
-        setattr(artist, key, value)
-      return artist
+        setattr(cls, key, value)
+      return cls
     
 class Show(db.Model):
   __tablename__ = "Show"
@@ -94,6 +94,12 @@ class Show(db.Model):
   
   venues = db.relationship("Venue", backref="shows", lazy=True)
   artists = db.relationship("Artist", backref="shows", lazy=True)
+  
+  # Function for updating show data
+  def update(cls, new_data:dict):
+    for key, value in new_data.items():
+      setattr(cls, key, value)
+    return cls
   
 # TODO Implement Show and Artist models, and complete all model relationships and properties, as a database migration.
 
@@ -264,7 +270,6 @@ def show_venue(venue_id):
   data = Venue.query.get(venue_id)
   data.genres = data.genres.split(",")
   
-  # data = list(filter(lambda d: d['id'] == venue_id, [data1, data2, data3]))[0]
   return render_template('pages/show_venue.html', venue=data)
 
 #  Create Venue
@@ -627,13 +632,32 @@ def create_shows():
 def create_show_submission():
   # called to create new shows in the db, upon submitting new show listing form
   # TODO: insert form data as a new Show record in the db, instead
+  
+  error = False
+  try:
+      new_data = request.form
+      show = Show()
+      show.update(new_data)
+      db.session.add(show)
+      db.session.commit()
+      flash('Show was successfully listed!')
+  except:
+      db.session.rollback()
+      error = True
+      print(sys.exc_info())
+      flash('An error occurred. Show could not be listed.')
+  finally:
+      db.session.close()
+  if error: 
+      abort(400)
+  else:
+      return render_template('pages/home.html')
 
   # on successful db insert, flash success
-  flash('Show was successfully listed!')
   # TODO: on unsuccessful db insert, flash an error instead.
   # e.g., flash('An error occurred. Show could not be listed.')
   # see: http://flask.pocoo.org/docs/1.0/patterns/flashing/
-  return render_template('pages/home.html')
+  # return render_template('pages/home.html')
 
 @app.errorhandler(404)
 def not_found_error(error):
