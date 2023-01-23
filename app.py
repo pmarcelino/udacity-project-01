@@ -8,13 +8,12 @@ import logging
 import sys
 
 from datetime import datetime
-from flask import Flask, render_template, request, Response, flash, redirect, url_for, abort
+from flask import Flask, render_template, request, flash, redirect, url_for, abort
 from flask_migrate import Migrate
 from flask_moment import Moment
-from flask_sqlalchemy import SQLAlchemy
-from logging import Formatter, FileHandler
 from flask_wtf import Form
 from forms import *
+from logging import Formatter, FileHandler
 from models import Artist, Venue, Show, db
 
 
@@ -55,7 +54,7 @@ def index():
 
 @app.route('/venues')
 def venues():
-  today = datetime.now()
+  today = datetime.today()
   
   cities_states = Venue.query.distinct(Venue.city, Venue.state).all()
   
@@ -75,7 +74,7 @@ def venues():
 
 @app.route('/venues/search', methods=['POST'])
 def search_venues():
-  today = datetime.now()
+  today = datetime.today()
   
   search_term = request.form.get('search_term', '')
   
@@ -91,7 +90,7 @@ def search_venues():
 
 @app.route('/venues/<int:venue_id>')
 def show_venue(venue_id):
-  today = datetime.now()
+  today = datetime.today()
   
   data = Venue.query.get(venue_id)
   data.genres = data.genres.split(",")
@@ -122,7 +121,6 @@ def create_venue_form():
 def create_venue_submission():
   form = VenueForm(request.form, meta={'csrf': False})
   if form.validate():
-    error = False
     try:
       data = request.form.to_dict()
     
@@ -177,7 +175,7 @@ def artists():
 
 @app.route('/artists/search', methods=['POST'])
 def search_artists():
-  today = datetime.now()
+  today = datetime.today()
   
   search_term = request.form.get('search_term', '')
   
@@ -193,7 +191,7 @@ def search_artists():
 
 @app.route('/artists/<int:artist_id>')
 def show_artist(artist_id):
-  today = datetime.now()
+  today = datetime.today()
   
   data = Artist.query.get(artist_id)
   data.genres = data.genres.split(",")
@@ -226,7 +224,6 @@ def edit_artist(artist_id):
 def edit_artist_submission(artist_id):
   form = ArtistForm(request.form, meta={'csrf': False})
   if form.validate():
-    error = False
     try:
       data = request.form.to_dict()
       
@@ -239,22 +236,21 @@ def edit_artist_submission(artist_id):
     
       db.session.add(artist)
       db.session.commit() 
+      
+      return redirect(url_for('show_artist', artist_id=artist_id))
     except:
       db.session.rollback()
-      error = True
       print(sys.exc_info())
+      flash('An error occurred. Artist ' + request.form['name'] + ' could not be updated.')
     finally:
       db.session.close()
-    if error: 
-      abort(400)
-    else:
-      return redirect(url_for('show_artist', artist_id=artist_id))
   else:
     message = []
     for _, err in form.errors.items():
         message.append(' '.join(err))
     flash('Errors ' + str(message) + '. Artist could not be updated.')
-    return render_template('pages/home.html')
+  
+  return render_template('pages/home.html')
 
 @app.route('/venues/<int:venue_id>/edit', methods=['GET'])
 def edit_venue(venue_id):
@@ -266,7 +262,6 @@ def edit_venue(venue_id):
 def edit_venue_submission(venue_id):
   form = VenueForm(request.form, meta={'csrf': False})
   if form.validate():
-    error = False
     try:
       data = request.form.to_dict()
     
@@ -279,22 +274,22 @@ def edit_venue_submission(venue_id):
     
       db.session.add(venue)
       db.session.commit()
+      
+      return redirect(url_for('show_venue', venue_id=venue_id))
     except:
       db.session.rollback()
       error = True
       print(sys.exc_info())
+      flash('An error occurred. Venue ' + request.form['name'] + ' could not be updated.')
     finally:
       db.session.close()
-    if error: 
-      abort(400)
-    else:
-      return redirect(url_for('show_venue', venue_id=venue_id))
   else:
     message = []
     for _, err in form.errors.items():
         message.append(' '.join(err))
     flash('Errors ' + str(message) + '. Venue could not be updated.')
-    return render_template('pages/home.html')
+    
+  return render_template('pages/home.html')
 
 #  Create Artist
 #  ----------------------------------------------------------------
@@ -308,7 +303,6 @@ def create_artist_form():
 def create_artist_submission():
   form = ArtistForm(request.form, meta={'csrf': False})
   if form.validate():
-    error = False
     try:
       data = request.form.to_dict()
     
@@ -358,7 +352,6 @@ def create_shows():
 
 @app.route('/shows/create', methods=['POST'])
 def create_show_submission():
-  error = False
   try:
     data = request.form
     
