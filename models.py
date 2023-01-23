@@ -13,14 +13,14 @@ class Venue(db.Model):
     phone = db.Column(db.String(120))
     image_link = db.Column(db.String(500))
     facebook_link = db.Column(db.String(120))
-    genres = db.Column(db.String(120), nullable=False)
+    genres = db.Column(db.String(500), nullable=False)
     website = db.Column(db.String)
     seeking_talent = db.Column(db.Boolean)
     seeking_description = db.Column(db.String)
     
     __table_args__ = (db.UniqueConstraint('name', 'city', 'state'),)
     
-    # Function for updating venue data
+    # Update venue data
     def update(cls, data):
       for key, value in data.items():
         if key=="seeking_talent":  # request.form.get don't return bool values
@@ -60,7 +60,7 @@ class Artist(db.Model):
     city = db.Column(db.String(120), nullable=False)  
     state = db.Column(db.String(120), nullable=False) 
     phone = db.Column(db.String(120))
-    genres = db.Column(db.String(120), nullable=False)
+    genres = db.Column(db.String(500), nullable=False)
     image_link = db.Column(db.String(500))
     facebook_link = db.Column(db.String(120))
     website = db.Column(db.String)
@@ -69,7 +69,7 @@ class Artist(db.Model):
     
     __table_args__ = (db.UniqueConstraint('name', 'city', 'state'),)
     
-    # Function for updating artist data
+    # Update artist data
     def update(cls, data):
       for key, value in data.items():
         if key=="seeking_talent":  # request.form.get don't return bool values
@@ -115,7 +115,7 @@ class Show(db.Model):
   venues = db.relationship("Venue", backref="shows", lazy=True)
   artists = db.relationship("Artist", backref="shows", lazy=True)
   
-  # Function for updating show data
+  # Update show data
   def update(cls, data):
     for key, value in data.items():
       setattr(cls, key, value)
