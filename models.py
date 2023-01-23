@@ -13,11 +13,12 @@ class Venue(db.Model):
     phone = db.Column(db.String(120))
     image_link = db.Column(db.String(500))
     facebook_link = db.Column(db.String(120))
-    
     genres = db.Column(db.String(120), nullable=False)
     website = db.Column(db.String)
     seeking_talent = db.Column(db.Boolean)
     seeking_description = db.Column(db.String)
+    
+    __table_args__ = (db.UniqueConstraint('name', 'city', 'state'),)
     
     # Function for updating venue data
     def update(cls, data):
@@ -55,17 +56,18 @@ class Artist(db.Model):
     __tablename__ = 'Artist'
 
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String, nullable=False, unique=True)  
+    name = db.Column(db.String, nullable=False)  
     city = db.Column(db.String(120), nullable=False)  
     state = db.Column(db.String(120), nullable=False) 
     phone = db.Column(db.String(120))
     genres = db.Column(db.String(120), nullable=False)
     image_link = db.Column(db.String(500))
     facebook_link = db.Column(db.String(120))
-    
     website = db.Column(db.String)
     seeking_venue = db.Column(db.Boolean)
     seeking_description = db.Column(db.String)
+    
+    __table_args__ = (db.UniqueConstraint('name', 'city', 'state'),)
     
     # Function for updating artist data
     def update(cls, data):

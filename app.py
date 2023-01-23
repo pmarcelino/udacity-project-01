@@ -119,27 +119,35 @@ def create_venue_form():
   return render_template('forms/new_venue.html', form=form)
 
 @app.route('/venues/create', methods=['POST'])
-def create_venue_submission():  
-  error = False
-  try:
-    data = request.form.to_dict()
+def create_venue_submission():
+  form = VenueForm(request.form, meta={'csrf': False})
+  if form.validate():
+    error = False
+    try:
+      data = request.form.to_dict()
+    
+      genres_list = request.form.getlist('genres')
+      genres_as_string = ','.join(genres_list)
+      data['genres'] = genres_as_string
+      
+      venue = Venue()
+      venue.update(data)
+      
+      db.session.add(venue)
+      db.session.commit()
+      flash('Venue ' + request.form['name'] + ' was successfully listed!')
+    except:
+      db.session.rollback()
+      print(sys.exc_info())
+      flash('An error occurred. Venue ' + request.form['name'] + ' could not be listed.')
+    finally:
+      db.session.close()
+  else:
+    message = []
+    for _, err in form.errors.items():
+        message.append(' '.join(err))
+    flash('Errors ' + str(message) + '. Venue could not be listed.')
   
-    genres_list = request.form.getlist('genres')
-    genres_as_string = ','.join(genres_list)
-    data['genres'] = genres_as_string
-    
-    venue = Venue()
-    venue.update(data)
-    
-    db.session.add(venue)
-    db.session.commit()
-    flash('Venue ' + request.form['name'] + ' was successfully listed!')
-  except:
-    db.session.rollback()
-    print(sys.exc_info())
-    flash('An error occurred. Venue ' + request.form['name'] + ' could not be listed.')
-  finally:
-    db.session.close()
   return render_template('pages/home.html')
 
 @app.route('/venues/<venue_id>', methods=['DELETE'])
@@ -216,30 +224,37 @@ def edit_artist(artist_id):
 
 @app.route('/artists/<int:artist_id>/edit', methods=['POST'])
 def edit_artist_submission(artist_id):
-  error = False
-  try:
-    data = request.form.to_dict()
+  form = ArtistForm(request.form, meta={'csrf': False})
+  if form.validate():
+    error = False
+    try:
+      data = request.form.to_dict()
+      
+      genres_list = request.form.getlist('genres') 
+      genres_as_string = ','.join(genres_list)
+      data['genres'] = genres_as_string
     
-    genres_list = request.form.getlist('genres') 
-    genres_as_string = ','.join(genres_list)
-    data['genres'] = genres_as_string
-  
-    artist = Artist.query.get(artist_id)
-    artist.update(data)
-  
-    db.session.add(artist)
-    db.session.commit() 
-  except:
-    db.session.rollback()
-    error = True
-    print(sys.exc_info())
-  finally:
-    db.session.close()
-  if error: 
-    abort(400)
+      artist = Artist.query.get(artist_id)
+      artist.update(data)
+    
+      db.session.add(artist)
+      db.session.commit() 
+    except:
+      db.session.rollback()
+      error = True
+      print(sys.exc_info())
+    finally:
+      db.session.close()
+    if error: 
+      abort(400)
+    else:
+      return redirect(url_for('show_artist', artist_id=artist_id))
   else:
-    return redirect(url_for('show_artist', artist_id=artist_id))
-  
+    message = []
+    for _, err in form.errors.items():
+        message.append(' '.join(err))
+    flash('Errors ' + str(message) + '. Artist could not be updated.')
+    return render_template('pages/home.html')
 
 @app.route('/venues/<int:venue_id>/edit', methods=['GET'])
 def edit_venue(venue_id):
@@ -249,29 +264,37 @@ def edit_venue(venue_id):
 
 @app.route('/venues/<int:venue_id>/edit', methods=['POST'])
 def edit_venue_submission(venue_id):
-  error = False
-  try:
-    data = request.form.to_dict()
-  
-    genres_list = request.form.getlist('genres') 
-    genres_as_string = ','.join(genres_list)
-    data['genres'] = genres_as_string
-  
-    venue = Venue.query.get(venue_id)
-    venue.update(data)
-  
-    db.session.add(venue)
-    db.session.commit()
-  except:
-    db.session.rollback()
-    error = True
-    print(sys.exc_info())
-  finally:
-    db.session.close()
-  if error: 
-    abort(400)
+  form = VenueForm(request.form, meta={'csrf': False})
+  if form.validate():
+    error = False
+    try:
+      data = request.form.to_dict()
+    
+      genres_list = request.form.getlist('genres') 
+      genres_as_string = ','.join(genres_list)
+      data['genres'] = genres_as_string
+    
+      venue = Venue.query.get(venue_id)
+      venue.update(data)
+    
+      db.session.add(venue)
+      db.session.commit()
+    except:
+      db.session.rollback()
+      error = True
+      print(sys.exc_info())
+    finally:
+      db.session.close()
+    if error: 
+      abort(400)
+    else:
+      return redirect(url_for('show_venue', venue_id=venue_id))
   else:
-    return redirect(url_for('show_venue', venue_id=venue_id))
+    message = []
+    for _, err in form.errors.items():
+        message.append(' '.join(err))
+    flash('Errors ' + str(message) + '. Venue could not be updated.')
+    return render_template('pages/home.html')
 
 #  Create Artist
 #  ----------------------------------------------------------------
@@ -282,27 +305,35 @@ def create_artist_form():
   return render_template('forms/new_artist.html', form=form)
 
 @app.route('/artists/create', methods=['POST'])
-def create_artist_submission():  
-  error = False
-  try:
-    data = request.form.to_dict()
+def create_artist_submission():
+  form = ArtistForm(request.form, meta={'csrf': False})
+  if form.validate():
+    error = False
+    try:
+      data = request.form.to_dict()
+    
+      genres_list = request.form.getlist('genres')
+      genres_as_string = ','.join(genres_list)
+      data['genres'] = genres_as_string
+    
+      artist = Artist()
+      artist.update(data)
+    
+      db.session.add(artist)
+      db.session.commit()
+      flash('Artist ' + request.form['name'] + ' was successfully listed!')
+    except:
+      db.session.rollback()
+      print(sys.exc_info())
+      flash('An error occurred. Artist ' + request.form['name'] + ' could not be listed.')
+    finally:
+      db.session.close()
+  else:
+    message = []
+    for _, err in form.errors.items():
+        message.append(' '.join(err))
+    flash('Errors ' + str(message) + '. Artist could not be listed.')
   
-    genres_list = request.form.getlist('genres')
-    genres_as_string = ','.join(genres_list)
-    data['genres'] = genres_as_string
-  
-    artist = Artist()
-    artist.update(data)
-  
-    db.session.add(artist)
-    db.session.commit()
-    flash('Artist ' + request.form['name'] + ' was successfully listed!')
-  except:
-    db.session.rollback()
-    print(sys.exc_info())
-    flash('An error occurred. Artist ' + request.form['name'] + ' could not be listed.')
-  finally:
-    db.session.close()
   return render_template('pages/home.html')
   
 #  Shows
@@ -370,10 +401,3 @@ if not app.debug:
 # Default port:
 if __name__ == '__main__':
     app.run()
-
-# Or specify port manually:
-'''
-if __name__ == '__main__':
-    port = int(os.environ.get('PORT', 5000))
-    app.run(host='0.0.0.0', port=port)
-'''
